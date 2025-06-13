@@ -1,0 +1,34 @@
+name: Enabling SSH Server browser session
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ttyd-over-localhost:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup ttyd
+        run: |
+          sudo apt update
+          sudo apt install -y wget
+          wget https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 -O ttyd
+          chmod +x ttyd
+          sudo mv ttyd /usr/local/bin/ttyd
+      - name: Start ttyd and tunnel with localhost.run
+        run: |
+          nohup ttyd -p 7681 --writable bash > ttyd.log 2>&1 &
+          echo "🕐 Waiting for ttyd to start on port 7681..."
+          for i in {1..15}; do
+            nc -z localhost 7681 && echo "✅ ttyd is up!" && break
+            echo "⏳ Retry $i: ttyd not yet up..."
+            sleep 1
+          done
+          echo "🌐 Creating public tunnel..."
+          ssh -o StrictHostKeyChecking=no -R 80:localhost:7681 nokey@localhost.run 2>&1 | tee tunnel.log &
+          sleep 5
+          echo "🔗 Public URL:"
+          cat tunnel.log | grep -Eo "https://[a-z0-9\-]+\.lhr\.life|https://[a-z0-9\-]+\.localhost\.run"
+          echo "📜 ttyd logs:"
+          cat ttyd.log
+          sleep 6000
