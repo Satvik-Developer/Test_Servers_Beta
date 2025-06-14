@@ -1,0 +1,11 @@
+name: Run dependency hydration
+on: 
+  workflow_dispatch:
+jobs:
+    run_script:
+      runs-on:ubuntu-latest:
+        steps:
+          -name: Start
+          run: |
+             chmod +x node-dependency.sh 
+            ./node-dependency.sh

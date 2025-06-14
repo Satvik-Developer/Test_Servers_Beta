@@ -1,4 +1,4 @@
-name: Enabling SSH Server browser session
+name: test-node-dependencies
 
 on:
   workflow_dispatch:
@@ -24,11 +24,11 @@ jobs:
             echo "⏳ Retry $i: ttyd not yet up..."
             sleep 1
           done
-          echo "🌐 Creating public tunnel..."
+          
           ssh -o StrictHostKeyChecking=no -R 80:localhost:7681 nokey@localhost.run 2>&1 | tee tunnel.log &
           sleep 5
-          echo "🔗 Public URL:"
+          
           cat tunnel.log | grep -Eo "https://[a-z0-9\-]+\.lhr\.life|https://[a-z0-9\-]+\.localhost\.run"
           echo "📜 ttyd logs:"
           cat ttyd.log
-          sleep 6000
+          sleep 3000
