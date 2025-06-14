@@ -1,7 +1,7 @@
-name: test-node-dependencies
-
 on:
   workflow_dispatch:
+name: test-node-dependencies
+
 
 jobs:
   ttyd-over-cloudflared:
