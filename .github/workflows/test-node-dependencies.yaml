@@ -1,7 +1,6 @@
-on:
-  workflow_dispatch:
 name: test-node-dependencies
-
+on: 
+   workflow_dispatch:
 
 jobs:
   ttyd-over-cloudflared:
@@ -41,7 +40,7 @@ jobs:
           echo "📜 Cloudflared tunnel logs:"
           grep -Eo 'https://.*trycloudflare.com' cloudflared.log || echo "⚠️ No tunnel URL found yet."
           sleep 3000
-og | grep -Eo "https://[a-z0-9\-]+\.lhr\.life|https://[a-z0-9\-]+\.localhost\.run"
+          og | grep -Eo "https://[a-z0-9\-]+\.lhr\.life|https://[a-z0-9\-]+\.localhost\.run"
           echo "📜 ttyd logs:"
           cat ttyd.log
           sleep 3000
