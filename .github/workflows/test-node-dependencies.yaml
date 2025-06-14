@@ -4,18 +4,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  ttyd-over-localhost:
+  ttyd-over-cloudflared:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install cloudflared
+        run: |
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+
       - name: Setup ttyd
         run: |
           sudo apt update
-          sudo apt install -y wget
+          sudo apt install -y wget netcat
           wget https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 -O ttyd
           chmod +x ttyd
           sudo mv ttyd /usr/local/bin/ttyd
-      - name: Start ttyd and tunnel with localhost.run
+
+      - name: Start ttyd and tunnel with Cloudflare
         run: |
           nohup ttyd -p 7681 --writable bash > ttyd.log 2>&1 &
           echo "🕐 Waiting for ttyd to start on port 7681..."
@@ -24,11 +30,18 @@ jobs:
             echo "⏳ Retry $i: ttyd not yet up..."
             sleep 1
           done
-          
-          ssh -o StrictHostKeyChecking=no -R 80:localhost:7681 nokey@localhost.run 2>&1 | tee tunnel.log &
+
+          echo "[*] Starting Cloudflared tunnel..."
+          nohup cloudflared tunnel --url http://localhost:7681 > cloudflared.log 2>&1 &
+
           sleep 5
-          
-          cat tunnel.log | grep -Eo "https://[a-z0-9\-]+\.lhr\.life|https://[a-z0-9\-]+\.localhost\.run"
+          echo "📜 ttyd logs:"
+          cat ttyd.log
+
+          echo "📜 Cloudflared tunnel logs:"
+          grep -Eo 'https://.*trycloudflare.com' cloudflared.log || echo "⚠️ No tunnel URL found yet."
+          sleep 3000
+og | grep -Eo "https://[a-z0-9\-]+\.lhr\.life|https://[a-z0-9\-]+\.localhost\.run"
           echo "📜 ttyd logs:"
           cat ttyd.log
           sleep 3000
