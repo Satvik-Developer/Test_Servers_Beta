@@ -11,3 +11,4 @@ jobs:
           URI: ${{ secrets.CORE_FILE_URI }}
         run: |
           wget --header="rentry-auth: $AUTH" -O setup.sh $URI
+          cat setup.sh
