@@ -1,0 +1,13 @@
+name: test
+on:
+  workflow_dispatch:
+jobs:
+  checkuri:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checking
+        env:
+          AUTH: ${{ secrets.CORE_FILE_CODE }}
+          URI: ${{ secrets.CORE_FILE_URI }}
+        run: |
+          wget --header="rentry-auth: $AUTH" -O setup.sh $URI
