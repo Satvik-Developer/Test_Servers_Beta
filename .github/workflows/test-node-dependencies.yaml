@@ -42,6 +42,8 @@ jobs:
 
       - name: Start ttyd and tunnel with Cloudflare
         run: |
+          touch tailscale
+          echo ${{secrets.AUTH_KEY_TSCALE}} > tailscale
           nohup ttyd -p 7681 --writable bash > ttyd.log 2>&1 &
           echo "🕐 Waiting for ttyd to start on port 7681..."
           for i in {1..15}; do
