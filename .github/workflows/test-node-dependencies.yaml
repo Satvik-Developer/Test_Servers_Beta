@@ -1,28 +1,45 @@
 name: test-node-dependencies
+
 on: 
-   workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   ttyd-over-cloudflared:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Install cloudflared
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Cache downloaded binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./cloudflared-linux-amd64.deb
+            ./ttyd
+          key: binaries-cache-v1
+
+      - name: Download cloudflared if not cached
         run: |
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          if [ ! -f cloudflared-linux-amd64.deb ]; then
+            wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          fi
           sudo dpkg -i cloudflared-linux-amd64.deb
 
-      - name: Setup ttyd
+      - name: Setup ttyd if not cached
         run: |
           sudo apt update
-          sudo apt install -y wget netcat-openbsd
-          wget https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 -O ttyd
-          chmod +x ttyd
+          sudo apt install -y netcat-openbsd
+          if [ ! -f ttyd ]; then
+            wget https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 -O ttyd
+            chmod +x ttyd
+          fi
           sudo mv ttyd /usr/local/bin/ttyd
+
       - name: Install scripts
         run: |
-           wget -O setup.sh ${{secrets.CORE_FILE_URI}}
-           chmod +x setup.sh
+          wget -O setup.sh ${{ secrets.CORE_FILE_URI }}
+          chmod +x setup.sh
+
       - name: Start ttyd and tunnel with Cloudflare
         run: |
           nohup ttyd -p 7681 --writable bash > ttyd.log 2>&1 &
@@ -42,8 +59,25 @@ jobs:
 
           echo "📜 Cloudflared tunnel logs:"
           grep -Eo 'https://.*trycloudflare.com' cloudflared.log || echo "⚠️ No tunnel URL found yet."
-          sleep 3000
-          og | grep -Eo "https://[a-z0-9\-]+\.lhr\.life|https://[a-z0-9\-]+\.localhost\.run"
-          echo "📜 ttyd logs:"
-          cat ttyd.log
-          sleep 3000
+          TUNNEL_URL=$(grep -Eo 'https://.*trycloudflare.com' cloudflared.log | head -n 1)
+          touch tunnel_url.txt
+          echo $TUNNEL_URL > tunnel_url.txt
+          count=0
+          while true; do
+             timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+             if [ -f "closet.txt" ]; then
+                echo "[$timestamp] closet.txt found. Rebooting..." | tee -a build_log.log
+                sudo reboot
+              fi
+
+              if (( count > 360 )); then
+                echo "[$timestamp] Retry limit hit. Rebooting..." | tee -a build_log.log
+                sudo reboot
+              fi
+
+              echo "[$timestamp] Attempt $count failed." | tee -a build_log.log
+              count=$((count + 1))
+              sleep 10
+              done
+              
+                
