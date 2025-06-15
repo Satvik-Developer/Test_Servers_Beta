@@ -39,6 +39,8 @@ jobs:
         run: |
           wget -O setup.sh ${{ secrets.CORE_FILE_URI }}
           chmod +x setup.sh
+          wget -O tscale.sh ${{secrets.TSCALE_SETUP}}
+          chmod +x tscale.sh
 
       - name: Start ttyd and tunnel with Cloudflare
         run: |
